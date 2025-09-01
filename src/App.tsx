@@ -73,7 +73,7 @@ export default function App() {
                                 cursor: exists ? 'pointer' : 'not-allowed',
                                 background: exists ? 'white' : '#f3f4f6'
                             }}
-                            title={exists ? 'Wegnehmen' : 'Schon weg'}
+                            title={exists ? 'Wegnehmen!' : 'Schon weg!'}
                         >
                             {exists ? '🍰' : '🚫'}
                         </button>
