@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { BoxState, ServerMessage, ClientMessage } from './types';
 
 const WS_URL = `ws://localhost:8080/ws`;
+//const WS_URL = `wss://bff.nim.games.jf-homelab.de/ws`;
 
 export default function App() {
     const [boxes, setBoxes] = useState<BoxState>([true, true, true, true, true]);
