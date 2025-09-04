@@ -130,7 +130,7 @@ export default function App() {
                 <header style={{ textAlign: 'center', marginBottom: 16 }}>
                     <h1 style={{ margin: 0 }}>🂡 CardGame</h1>
                     <p style={{ margin: 0, opacity: 0.7 }}>
-                        Status: {connected ? 'online' : 'offline'}
+                        Status: {connected ? 'online' : 'offline'} via {API_BASE}
                     </p>
                 </header>
 
@@ -170,7 +170,7 @@ export default function App() {
 
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                     <button onClick={reset} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd' }}>
-                        Reset (alle 5 zurück)
+                        Reset game
                     </button>
                 </div>
             </div>
