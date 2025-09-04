@@ -1,43 +1,59 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { BoxState, ServerMessage, ClientMessage } from './types';
 
-const WS_URL = `ws://localhost:8080/ws`;
-//const WS_URL = `wss://bff.nim.games.jf-homelab.de/ws`;
+
+const API_BASE = 'http://localhost:8000';
+const ES_URL = `${API_BASE}/events`;
+
 
 export default function App() {
     const [boxes, setBoxes] = useState<BoxState>([true, true, true, true, true]);
     const [connected, setConnected] = useState(false);
-    const wsRef = useRef<WebSocket | null>(null);
+    const esRef = useRef<EventSource | null>(null);
+
 
     useEffect(() => {
-        const ws = new WebSocket(WS_URL);
-        wsRef.current = ws;
+        const es = new EventSource(ES_URL);
+        esRef.current = es;
 
-        ws.onopen = () => setConnected(true);
-        ws.onclose = () => setConnected(false);
-        ws.onerror = () => setConnected(false);
-
-        ws.onmessage = (ev) => {
+        console.log('[SSE] connecting to', ES_URL);
+        es.onopen = () => { console.log('[SSE] open'); setConnected(true); };
+        es.onerror = (e) => { console.warn('[SSE] error', e); setConnected(false); };
+        es.onmessage = (ev) => {
+            // Debug: zeig die ersten Bytes
+            // console.debug('[SSE] message', ev.data?.slice(0, 80));
             try {
                 const msg: ServerMessage = JSON.parse(ev.data);
                 if (msg.type === 'state') setBoxes(msg.boxes);
-            } catch { /* empty */ }
+            } catch {}
         };
 
-        return () => ws.close();
+        return () => es.close();
     }, []);
 
+
+
+    const post = (path: string, payload?: unknown) =>
+        fetch(`${API_BASE}${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload ? JSON.stringify(payload) : undefined,
+        }).catch(() => {});
+
+
     const removeBox = (i: number) => {
-        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        if (!connected) return;
         const msg: ClientMessage = { type: 'remove', index: i };
-        wsRef.current.send(JSON.stringify(msg));
+        post('/remove', msg);
     };
 
+
     const reset = () => {
-        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-        const msg: ClientMessage = { type: 'reset' };
-        wsRef.current.send(JSON.stringify(msg));
+        if (!connected) return;
+        const msg: ClientMessage = { type: 'reset' } as any; // Body wird auf Server-Seite ignoriert
+        post('/reset', msg);
     };
+
 
     return (
         <div style={{
@@ -53,6 +69,7 @@ export default function App() {
                         Status: {connected ? 'online' : 'offline'}
                     </p>
                 </header>
+
 
                 <div style={{
                     display: 'grid',
@@ -80,6 +97,7 @@ export default function App() {
                         </button>
                     ))}
                 </div>
+
 
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                     <button onClick={reset} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd' }}>
