@@ -1,61 +1,120 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { BoxState, ServerMessage, ClientMessage } from './types';
 
-<<<<<<< HEAD
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE ='http://localhost:8000';
 const ES_URL = `${API_BASE}/events`;
 
-=======
-//const WS_URL = `ws://localhost:8080/ws`;
-const WS_URL = `ws://bff.nim.games.jf-homelab.de/ws`;
->>>>>>> 2645822800ced6c8261d9602b9073293a7ca0040
+
+// kleines Backoff für Reconnect
+function backoff(attempt: number) {
+// 0.5s, 1s, 2s, 4s, max 5s
+    return Math.min(500 * 2 ** attempt, 5000);
+}
+
 
 export default function App() {
     const [boxes, setBoxes] = useState<BoxState>([true, true, true, true, true]);
     const [connected, setConnected] = useState(false);
+    const [attempt, setAttempt] = useState(0);
     const esRef = useRef<EventSource | null>(null);
+    const reconnectTimer = useRef<number | null>(null);
 
 
     useEffect(() => {
-        const es = new EventSource(ES_URL);
-        esRef.current = es;
+        let closed = false;
 
-        console.log('[SSE] connecting to', ES_URL);
-        es.onopen = () => { console.log('[SSE] open'); setConnected(true); };
-        es.onerror = (e) => { console.warn('[SSE] error', e); setConnected(false); };
-        es.onmessage = (ev) => {
-            // Debug: zeig die ersten Bytes
-            // console.debug('[SSE] message', ev.data?.slice(0, 80));
-            try {
-                const msg: ServerMessage = JSON.parse(ev.data);
-                if (msg.type === 'state') setBoxes(msg.boxes);
-            } catch {}
+
+        const connect = () => {
+            if (closed) return;
+            const es = new EventSource(ES_URL);
+            esRef.current = es;
+
+
+            console.log('[SSE] connecting to', ES_URL);
+            es.onopen = () => {
+                console.log('[SSE] open');
+                setConnected(true);
+                setAttempt(0);
+            };
+            es.onerror = (e) => {
+                console.warn('[SSE] error', e);
+                setConnected(false);
+                es.close();
+                const next = backoff(attempt);
+                if (!closed) {
+                    if (reconnectTimer.current) window.clearTimeout(reconnectTimer.current);
+                    reconnectTimer.current = window.setTimeout(() => {
+                        setAttempt((a) => a + 1);
+                        connect();
+                    }, next);
+                }
+            };
+            es.onmessage = (ev) => {
+                try {
+                    const msg: ServerMessage = JSON.parse(ev.data);
+                    if (msg.type === 'state') setBoxes(msg.boxes);
+                } catch {
+                    console.error('[SSE] invalid message', ev.data);
+                }
+            };
         };
 
-        return () => es.close();
-    }, []);
+
+        connect();
 
 
+        const onVis = () => {
+            if (document.visibilityState === 'visible' && !connected) {
+// schneller reconnect bei Rückkehr in den Tab
+                if (reconnectTimer.current) window.clearTimeout(reconnectTimer.current);
+                setAttempt((a) => a + 1);
+                connect();
+            }
+        };
+        document.addEventListener('visibilitychange', onVis);
 
-    const post = (path: string, payload?: unknown) =>
-        fetch(`${API_BASE}${path}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: payload ? JSON.stringify(payload) : undefined,
-        }).catch(() => {});
+
+        return () => {
+            closed = true;
+            document.removeEventListener('visibilitychange', onVis);
+            if (reconnectTimer.current) window.clearTimeout(reconnectTimer.current);
+            esRef.current?.close();
+        };
+    }, [attempt]);
+
+
+    async function post(path: string, payload?: unknown) {
+        const ctrl = new AbortController();
+        const timeout = window.setTimeout(() => ctrl.abort(), 8000);
+        try {
+            const res = await fetch(`${API_BASE}${path}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload ? JSON.stringify(payload) : undefined,
+                signal: ctrl.signal,
+            });
+            if (!res.ok) {
+                const txt = await res.text().catch(() => '');
+                console.warn('[POST]', path, res.status, txt);
+            }
+        } catch (e) {
+            console.error('[POST failed]', path, e);
+        } finally {
+            window.clearTimeout(timeout);
+        }
+    }
 
 
     const removeBox = (i: number) => {
-        if (!connected) return;
+// auch senden, wenn connected=false (Server nimmt es entgegen; UI synced via SSE)
         const msg: ClientMessage = { type: 'remove', index: i };
         post('/remove', msg);
     };
 
 
     const reset = () => {
-        if (!connected) return;
-        const msg: ClientMessage = { type: 'reset' } as any; // Body wird auf Server-Seite ignoriert
+        const msg: ClientMessage = { type: 'reset' } as const;
         post('/reset', msg);
     };
 
