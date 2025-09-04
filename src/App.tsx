@@ -1,10 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { BoxState, ServerMessage, ClientMessage } from './types';
 
+<<<<<<< HEAD
 
 const API_BASE = 'http://localhost:8000';
 const ES_URL = `${API_BASE}/events`;
 
+=======
+//const WS_URL = `ws://localhost:8080/ws`;
+const WS_URL = `ws://bff.nim.games.jf-homelab.de/ws`;
+>>>>>>> 2645822800ced6c8261d9602b9073293a7ca0040
 
 export default function App() {
     const [boxes, setBoxes] = useState<BoxState>([true, true, true, true, true]);
