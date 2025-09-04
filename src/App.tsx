@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { BoxState, ServerMessage, ClientMessage } from './types';
 
 
-const API_BASE ='http://localhost:8000';
+const API_BASE ='https://bff-pr-3.nim.games.jf-homelab.de/';
 const ES_URL = `${API_BASE}/events`;
 
 
