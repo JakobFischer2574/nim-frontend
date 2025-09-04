@@ -17,7 +17,15 @@ function backoff(attempt: number) {
 }
 
 export default function App() {
-    const [boxes, setBoxes] = useState<BoxState>([true, true, true, true, true]);
+    //const [boxes, setBoxes] = useState<BoxState>([true, true, true, true, true]);
+    //Jetzt ist es ein rechteck an Boxen also ein 2 Dimensonales Array
+    const [boxes, setBoxes] = useState<BoxState>([
+        [true],
+        [true, true, true],
+        [true, true, true, true, true],
+        [true, true, true,true, true, true,true]
+    ]);
+
     const [connected, setConnected] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const esRef = useRef<EventSource | null>(null);
@@ -100,8 +108,8 @@ export default function App() {
         }
     }
 
-    const removeBox = (i: number) => {
-        const msg: ClientMessage = { type: 'remove', index: i };
+    const removeBox = (r: number, l: number) => {
+        const msg: ClientMessage = { type: 'remove', indexRow: r, indexLine: l};
         post('/remove', msg);
     };
 
@@ -113,13 +121,14 @@ export default function App() {
     return (
         <div style={{
             minHeight: '100svh',
-            display: 'grid',
-            placeItems: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             fontFamily: 'ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial'
         }}>
             <div style={{ width: 420, maxWidth: '92vw' }}>
                 <header style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <h1 style={{ margin: 0 }}>🍰 CakeBoxes</h1>
+                    <h1 style={{ margin: 0 }}>🂡 CardGame</h1>
                     <p style={{ margin: 0, opacity: 0.7 }}>
                         Status: {connected ? 'online' : 'offline'}
                     </p>
@@ -127,28 +136,35 @@ export default function App() {
 
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(5, 1fr)',
+                    gridTemplateColumns: 'repeat(1, 1fr)',
                     gap: 12,
                     marginBottom: 16
                 }}>
-                    {boxes.map((exists, i) => (
-                        <button
-                            key={i}
-                            onClick={() => exists && removeBox(i)}
-                            disabled={!exists}
-                            style={{
-                                aspectRatio: '1 / 1',
-                                borderRadius: 16,
-                                border: '1px solid #ddd',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                fontSize: 24,
-                                cursor: exists ? 'pointer' : 'not-allowed',
-                                background: exists ? 'white' : '#f3f4f6'
-                            }}
-                            title={exists ? 'Wegnehmen!' : 'Schon weg!'}
-                        >
-                            {exists ? '🍰' : '🚫'}
-                        </button>
+                    {boxes.map((row, rowIndex) => (
+                        <React.Fragment key={rowIndex}>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
+                                {row.map((exists, colIndex) => (
+                                    <button
+                                        key={`${rowIndex}-${colIndex}`}
+                                        onClick={() => exists && removeBox(rowIndex, colIndex)}
+                                        disabled={!exists}
+                                        style={{
+                                            aspectRatio: '1 / 1',
+                                            borderRadius: 16,
+                                            border: '1px solid #ddd',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                            fontSize: 24,
+                                            cursor: exists ? 'pointer' : 'not-allowed',
+                                            background: exists ? 'white' : '#f3f4f6'
+                                        }}
+                                        title={exists ? 'Wegnehmen!' : 'Schon weg!'}
+                                    >
+                                        {exists ? '🃏' : '🚫'}
+                                    </button>
+                                ))}
+                            </div>
+                            <br />
+                        </React.Fragment>
                     ))}
                 </div>
 
