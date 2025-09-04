@@ -1,17 +1,20 @@
+// App.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import type { BoxState, ServerMessage, ClientMessage } from './types';
 
+// => a) Lokal direkt aufs Backend (Port 3000)
+const API_BASE = 'http://localhost:3000';
 
-const API_BASE ='https://bff-pr-3.nim.games.jf-homelab.de/';
+// => b) Besser: Same-Origin default + optional .env Override (prod-tauglich)
+//const API_BASE = (import.meta as any)?.env?.VITE_API_BASE ?? '';
+
 const ES_URL = `${API_BASE}/events`;
-
 
 // kleines Backoff für Reconnect
 function backoff(attempt: number) {
-// 0.5s, 1s, 2s, 4s, max 5s
+    // 0.5s, 1s, 2s, 4s, max 5s
     return Math.min(500 * 2 ** attempt, 5000);
 }
-
 
 export default function App() {
     const [boxes, setBoxes] = useState<BoxState>([true, true, true, true, true]);
@@ -20,16 +23,13 @@ export default function App() {
     const esRef = useRef<EventSource | null>(null);
     const reconnectTimer = useRef<number | null>(null);
 
-
     useEffect(() => {
         let closed = false;
-
 
         const connect = () => {
             if (closed) return;
             const es = new EventSource(ES_URL);
             esRef.current = es;
-
 
             console.log('[SSE] connecting to', ES_URL);
             es.onopen = () => {
@@ -60,13 +60,10 @@ export default function App() {
             };
         };
 
-
         connect();
-
 
         const onVis = () => {
             if (document.visibilityState === 'visible' && !connected) {
-// schneller reconnect bei Rückkehr in den Tab
                 if (reconnectTimer.current) window.clearTimeout(reconnectTimer.current);
                 setAttempt((a) => a + 1);
                 connect();
@@ -74,15 +71,13 @@ export default function App() {
         };
         document.addEventListener('visibilitychange', onVis);
 
-
         return () => {
             closed = true;
             document.removeEventListener('visibilitychange', onVis);
             if (reconnectTimer.current) window.clearTimeout(reconnectTimer.current);
             esRef.current?.close();
         };
-    }, [attempt]);
-
+    }, [attempt, connected]);
 
     async function post(path: string, payload?: unknown) {
         const ctrl = new AbortController();
@@ -105,19 +100,15 @@ export default function App() {
         }
     }
 
-
     const removeBox = (i: number) => {
-// auch senden, wenn connected=false (Server nimmt es entgegen; UI synced via SSE)
         const msg: ClientMessage = { type: 'remove', index: i };
         post('/remove', msg);
     };
-
 
     const reset = () => {
         const msg: ClientMessage = { type: 'reset' } as const;
         post('/reset', msg);
     };
-
 
     return (
         <div style={{
@@ -133,7 +124,6 @@ export default function App() {
                         Status: {connected ? 'online' : 'offline'}
                     </p>
                 </header>
-
 
                 <div style={{
                     display: 'grid',
@@ -161,7 +151,6 @@ export default function App() {
                         </button>
                     ))}
                 </div>
-
 
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                     <button onClick={reset} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd' }}>
