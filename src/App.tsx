@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { BoxState, ServerMessage, ClientMessage } from './types';
 
 // => a) Lokal direkt aufs Backend (Port 3000)
-const API_BASE = 'https://bff-pr-2.nim.games.jf-homelab.de/';
+const API_BASE = 'https://bff.dace-stairs.ts.net/events';
 
 // => b) Besser: Same-Origin default + optional .env Override (prod-tauglich)
 //const API_BASE = (import.meta as any)?.env?.VITE_API_BASE ?? '';
@@ -128,7 +128,7 @@ export default function App() {
         }}>
             <div style={{ width: 420, maxWidth: '92vw' }}>
                 <header style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <h1 style={{ margin: 0 }}>🂡 CardGame</h1>
+                    <h1 style={{ margin: 0 }}>🃏 CardGame</h1>
                     <p style={{ margin: 0, opacity: 0.7 }}>
                         Status: {connected ? 'online' : 'offline'} via {API_BASE}
                     </p>
