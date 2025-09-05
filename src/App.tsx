@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { BoxState, ServerMessage, ClientMessage } from './types';
 
 // => a) Lokal direkt aufs Backend (Port 3000)
-const API_BASE = 'https://bff.dace-stairs.ts.net/events';
+const API_BASE = 'https://bff.dace-stairs.ts.net';
 
 // => b) Besser: Same-Origin default + optional .env Override (prod-tauglich)
 //const API_BASE = (import.meta as any)?.env?.VITE_API_BASE ?? '';
